@@ -20,7 +20,7 @@ PMCMD_SCRIPT = f"{DEMO_DIR}/infa_pmcmd.sh"
 
 
 @dag(
-    dag_id="member_load_ssh_demo",
+    dag_id="IICS_TEST_RUN_SCRIPT",
     description="Trigger IICS and CDI-PC jobs from Azure VM and retrieve logs",
     start_date=pendulum.datetime(
         2018,
