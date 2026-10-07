@@ -72,57 +72,140 @@ echo "OS       : $(uname -a)"
     # Replace the dummy values with the real values when moving
     # from the migration/demo environment to production.
     # ------------------------------------------------------------
-    setup_informatica_config = SSHOperator(
-        task_id="setup_informatica_config",
-        ssh_conn_id=SSH_CONN_ID,
-        command=f"""
-set -euo pipefail
+    ssetup_informatica_config = SSHOperator(
+    task_id="setup_informatica_config",
+    ssh_conn_id=SSH_CONN_ID,
+    command=f"""
+set -u -o pipefail
 
-mkdir -p "{DEMO_DIR}"
+mkdir -p "{DEMO_DIR}/bin"
 
 echo "========================================"
-echo " Setting up Informatica configuration"
+echo " Setting up Informatica test environment"
 echo "========================================"
 
-cat > "{INFA_ENV_FILE}" <<'EOF'
 # ============================================================
-# IICS / IDMC DUMMY CONFIGURATION
-# ============================================================
-
-# Path to Informatica IICS CLI on the Azure VM.
+# DUMMY IICS CLI
 #
-# Replace with the actual CLI location.
-IICS_CLI_SH="/opt/informatica/iics/cli/cli.sh"
+# Simulates Informatica cli.sh runAJobCli.
+# Replace this with the real cli.sh path when DEMO_MODE=false.
+# ============================================================
 
-# IICS POD/base URL.
-IICS_BASE_URL="https://dummy-iics-pod.example.com/ma"
+cat > "{DEMO_DIR}/bin/cli.sh" <<'IICS_DUMMY'
+#!/usr/bin/env bash
 
-# Dummy service account.
+set -u -o pipefail
+
+echo "========================================"
+echo " Dummy IICS CLI"
+echo "========================================"
+
+echo "Command received:"
+echo "$*"
+
+if [[ "$*" != *"runAJobCli"* ]]; then
+    echo "ERROR: Expected runAJobCli"
+    exit 2
+fi
+
+echo ""
+echo "IICS Job"
+echo "----------------------------------------"
+echo "Task Name : dummy_member_taskflow"
+echo "Task Type : TASKFLOW"
+echo "Status    : RUNNING"
+
+sleep 2
+
+echo "Status    : SUCCESS"
+echo "Job ID    : dummy-iics-job-001"
+
+exit 0
+IICS_DUMMY
+
+chmod 700 "{DEMO_DIR}/bin/cli.sh"
+
+
+# ============================================================
+# DUMMY PMCMD
+#
+# Simulates Informatica pmcmd.
+# ============================================================
+
+cat > "{DEMO_DIR}/bin/pmcmd" <<'PMCMD_DUMMY'
+#!/usr/bin/env bash
+
+set -u -o pipefail
+
+echo "========================================"
+echo " Dummy Informatica pmcmd"
+echo "========================================"
+
+echo "Command received:"
+echo "$*"
+
+if [[ "$*" != *"startworkflow"* ]]; then
+    echo "ERROR: Expected startworkflow"
+    exit 2
+fi
+
+echo ""
+echo "CDI-PC Workflow"
+echo "----------------------------------------"
+echo "Domain      : dummy_domain"
+echo "Service     : dummy_integration_service"
+echo "Folder      : dummy_folder"
+echo "Workflow    : dummy_member_workflow"
+echo "Status      : RUNNING"
+
+sleep 2
+
+echo "Status      : SUCCEEDED"
+echo "Workflow ID : dummy-cdipc-workflow-001"
+
+exit 0
+PMCMD_DUMMY
+
+chmod 700 "{DEMO_DIR}/bin/pmcmd"
+
+
+# ============================================================
+# Environment/configuration
+# ============================================================
+
+cat > "{INFA_ENV_FILE}" <<EOF
+# ============================================================
+# DEMO MODE
+# ============================================================
+
+DEMO_MODE=true
+
+
+# ============================================================
+# IICS / IDMC
+# ============================================================
+
+IICS_CLI_SH="{DEMO_DIR}/bin/cli.sh"
+
+IICS_BASE_URL="https://dummy-iics.example.com/ma"
 IICS_USERNAME="dummy_iics_user"
 IICS_PASSWORD="dummy_iics_password"
 
-# TASKFLOW or TASK
 IICS_TASK_KIND="TASKFLOW"
-
-# Dummy IICS taskflow.
 IICS_TASK_NAME="dummy_member_taskflow"
 
-# For non-TASKFLOW execution:
 IICS_TASK_TYPE="DSS"
 IICS_FOLDER_PATH="dummy_project/dummy_folder"
 
 
 # ============================================================
-# CDI-PC / PMCMD DUMMY CONFIGURATION
+# CDI-PC
 # ============================================================
 
-# Informatica installation directory.
-INFA_HOME="/opt/informatica/cdi-pc"
+INFA_HOME="{DEMO_DIR}"
 
-# pmcmd executable.
-PMCMD_BIN="/opt/informatica/cdi-pc/server/bin/pmcmd"
+PMCMD_BIN="{DEMO_DIR}/bin/pmcmd"
 
-# Dummy domain/service/account values.
 INFA_DOMAIN="dummy_domain"
 INFA_SERVICE="dummy_integration_service"
 
@@ -132,30 +215,40 @@ INFA_PASSWORD="dummy_cdipc_password"
 INFA_FOLDER="dummy_folder"
 INFA_WORKFLOW="dummy_member_workflow"
 
-# Informatica domain configuration.
-INFA_DOMAINS_FILE="/opt/informatica/cdi-pc/domains.infa"
+INFA_DOMAINS_FILE="{DEMO_DIR}/domains.infa"
 
-# Runtime environment.
-PATH="/opt/informatica/cdi-pc/server/bin:$PATH"
-LD_LIBRARY_PATH="/opt/informatica/cdi-pc/server/bin:${{LD_LIBRARY_PATH:-}}"
+PATH="{DEMO_DIR}/bin:\$PATH"
+LD_LIBRARY_PATH="{DEMO_DIR}/bin:\${{LD_LIBRARY_PATH:-}}"
 EOF
 
 chmod 600 "{INFA_ENV_FILE}"
 
-echo ""
-echo "Configuration file created:"
-echo "{INFA_ENV_FILE}"
 
 echo ""
-echo "Configured variables:"
+echo "========================================"
+echo " Runtime validation"
+echo "========================================"
+
+echo ""
+echo "IICS CLI:"
+ls -l "{DEMO_DIR}/bin/cli.sh"
+
+echo ""
+echo "PMCMD:"
+ls -l "{DEMO_DIR}/bin/pmcmd"
+
+echo ""
+echo "Configuration:"
 grep -E '^[A-Z_]+=' "{INFA_ENV_FILE}" \
     | sed -E 's/(PASSWORD=).*/\\1********/'
 
 echo ""
-echo "Configuration setup complete."
+echo "========================================"
+echo " Test environment ready"
+echo "========================================"
 """,
-        cmd_timeout=60,
-    )
+    cmd_timeout=60,
+)
 
     # ------------------------------------------------------------
     # 3. Generate iics_run.sh and infa_pmcmd.sh
@@ -164,7 +257,7 @@ echo "Configuration setup complete."
         task_id="create_informatica_scripts",
         ssh_conn_id=SSH_CONN_ID,
         command=f"""
-set -euo pipefail
+set -u -o pipefail
 
 echo "========================================"
 echo " Creating Informatica scripts"
@@ -183,7 +276,7 @@ fi
 cat > "{IICS_SCRIPT}" <<'IICS_SCRIPT'
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -u -o pipefail
 
 ENV_FILE="__ENV_FILE__"
 
@@ -320,52 +413,80 @@ ls -l "{IICS_SCRIPT}" "{PMCMD_SCRIPT}"
     # ------------------------------------------------------------
     # 4. Execute IICS
     # ------------------------------------------------------------
-    execute_iics = SSHOperator(
-        task_id="execute_iics_job",
-        ssh_conn_id=SSH_CONN_ID,
-        command=f"""
-set -euo pipefail
+    eexecute_iics = SSHOperator(
+    task_id="execute_iics_job",
+    ssh_conn_id=SSH_CONN_ID,
+    command=f"""
+set -u -o pipefail
 
 echo "========================================"
 echo " Executing iics_run.sh"
 echo "========================================"
 
-"{IICS_SCRIPT}"
-
-EXIT_CODE=$?
+echo "Script:"
+ls -l "{IICS_SCRIPT}"
 
 echo ""
-echo "IICS exit code: $EXIT_CODE"
+echo "IICS CLI:"
+ls -l "{DEMO_DIR}/bin/cli.sh"
+
+echo ""
+echo "Running..."
+echo ""
+
+set +e
+/bin/bash "{IICS_SCRIPT}"
+EXIT_CODE=$?
+set -e
+
+echo ""
+echo "========================================"
+echo " IICS EXIT CODE: $EXIT_CODE"
+echo "========================================"
 
 exit $EXIT_CODE
 """,
-        cmd_timeout=6 * 60 * 60,
-    )
+    cmd_timeout=6 * 60 ,
+)
 
     # ------------------------------------------------------------
     # 5. Execute CDI-PC
     # ------------------------------------------------------------
     execute_pmcmd = SSHOperator(
-        task_id="execute_cdipc_job",
-        ssh_conn_id=SSH_CONN_ID,
-        command=f"""
-set -euo pipefail
+    task_id="execute_cdipc_job",
+    ssh_conn_id=SSH_CONN_ID,
+    command=f"""
+set -u -o pipefail
 
 echo "========================================"
 echo " Executing infa_pmcmd.sh"
 echo "========================================"
 
-"{PMCMD_SCRIPT}"
-
-EXIT_CODE=$?
+echo "Script:"
+ls -l "{PMCMD_SCRIPT}"
 
 echo ""
-echo "CDI-PC exit code: $EXIT_CODE"
+echo "PMCMD:"
+ls -l "{DEMO_DIR}/bin/pmcmd"
+
+echo ""
+echo "Running..."
+echo ""
+
+set +e
+/bin/bash "{PMCMD_SCRIPT}"
+EXIT_CODE=$?
+set -e
+
+echo ""
+echo "========================================"
+echo " CDI-PC EXIT CODE: $EXIT_CODE"
+echo "========================================"
 
 exit $EXIT_CODE
 """,
-        cmd_timeout=6 * 60 * 60,
-    )
+    cmd_timeout=6 * 60 * 60,
+)
 
     # ------------------------------------------------------------
     # 6. Return saved logs to Airflow
