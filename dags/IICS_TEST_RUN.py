@@ -72,11 +72,11 @@ echo "OS       : $(uname -a)"
     # Replace the dummy values with the real values when moving
     # from the migration/demo environment to production.
     # ------------------------------------------------------------
-    ssetup_informatica_config = SSHOperator(
-    task_id="setup_informatica_config",
-    ssh_conn_id=SSH_CONN_ID,
-    command=f"""
-set -u -o pipefail
+    setup_informatica_config = SSHOperator(
+        task_id="setup_informatica_config",
+        ssh_conn_id=SSH_CONN_ID,
+        command=f"""
+set -euo pipefail
 
 mkdir -p "{DEMO_DIR}/bin"
 
@@ -217,8 +217,8 @@ INFA_WORKFLOW="dummy_member_workflow"
 
 INFA_DOMAINS_FILE="{DEMO_DIR}/domains.infa"
 
-PATH="{DEMO_DIR}/bin:\$PATH"
-LD_LIBRARY_PATH="{DEMO_DIR}/bin:\${{LD_LIBRARY_PATH:-}}"
+PATH="{DEMO_DIR}/bin:$PATH"
+LD_LIBRARY_PATH="{DEMO_DIR}/bin:${{LD_LIBRARY_PATH:-}}"
 EOF
 
 chmod 600 "{INFA_ENV_FILE}"
@@ -257,7 +257,7 @@ echo "========================================"
         task_id="create_informatica_scripts",
         ssh_conn_id=SSH_CONN_ID,
         command=f"""
-set -u -o pipefail
+set -euo pipefail
 
 echo "========================================"
 echo " Creating Informatica scripts"
@@ -348,7 +348,7 @@ chmod 700 "{IICS_SCRIPT}"
 cat > "{PMCMD_SCRIPT}" <<'PMCMD_SCRIPT'
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -u -o pipefail
 
 ENV_FILE="__ENV_FILE__"
 
@@ -377,6 +377,8 @@ echo "Workflow        : $INFA_WORKFLOW"
 echo ""
 echo "Starting CDI-PC workflow..."
 
+set +e
+
 "$PMCMD_BIN" startworkflow \
     -d "$INFA_DOMAIN" \
     -sv "$INFA_SERVICE" \
@@ -388,6 +390,8 @@ echo "Starting CDI-PC workflow..."
     2>&1 | tee "$LOG_FILE"
 
 EXIT_CODE="${{PIPESTATUS[0]}}"
+
+set -e
 
 echo ""
 echo "========================================"
@@ -413,10 +417,10 @@ ls -l "{IICS_SCRIPT}" "{PMCMD_SCRIPT}"
     # ------------------------------------------------------------
     # 4. Execute IICS
     # ------------------------------------------------------------
-    eexecute_iics = SSHOperator(
-    task_id="execute_iics_job",
-    ssh_conn_id=SSH_CONN_ID,
-    command=f"""
+    execute_iics = SSHOperator(
+        task_id="execute_iics_job",
+        ssh_conn_id=SSH_CONN_ID,
+        command=f"""
 set -u -o pipefail
 
 echo "========================================"
@@ -429,6 +433,9 @@ ls -l "{IICS_SCRIPT}"
 echo ""
 echo "IICS CLI:"
 ls -l "{DEMO_DIR}/bin/cli.sh"
+
+# Validate generated shell script before execution.
+/bin/bash -n "{IICS_SCRIPT}"
 
 echo ""
 echo "Running..."
@@ -446,16 +453,16 @@ echo "========================================"
 
 exit $EXIT_CODE
 """,
-    cmd_timeout=6 * 60 ,
+        cmd_timeout=6 * 60 * 60,
 )
 
     # ------------------------------------------------------------
     # 5. Execute CDI-PC
     # ------------------------------------------------------------
     execute_pmcmd = SSHOperator(
-    task_id="execute_cdipc_job",
-    ssh_conn_id=SSH_CONN_ID,
-    command=f"""
+        task_id="execute_cdipc_job",
+        ssh_conn_id=SSH_CONN_ID,
+        command=f"""
 set -u -o pipefail
 
 echo "========================================"
@@ -468,6 +475,9 @@ ls -l "{PMCMD_SCRIPT}"
 echo ""
 echo "PMCMD:"
 ls -l "{DEMO_DIR}/bin/pmcmd"
+
+# Validate generated shell script before execution.
+/bin/bash -n "{PMCMD_SCRIPT}"
 
 echo ""
 echo "Running..."
@@ -485,7 +495,7 @@ echo "========================================"
 
 exit $EXIT_CODE
 """,
-    cmd_timeout=6 * 60 * 60,
+        cmd_timeout=6 * 60 * 60,
 )
 
     # ------------------------------------------------------------
@@ -493,6 +503,7 @@ exit $EXIT_CODE
     # ------------------------------------------------------------
     collect_logs = SSHOperator(
         task_id="collect_informatica_logs",
+        trigger_rule="all_done",
         ssh_conn_id=SSH_CONN_ID,
         command=f"""
 set -euo pipefail
