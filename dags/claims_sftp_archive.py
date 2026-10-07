@@ -3,7 +3,7 @@
 Uses the same SFTP server and file as `claims_sftp_to_oracle_parallel`:
 
 1. Make two copies of the claims file next to the original.
-2. Move copy 1 to /ftp/archive.
+2. Move copy 1 to the `archive` folder next to the original.
 3. Zip the archived copy.
 4. Grant the user delete access (demo: log only).
 5. Delete the original file.
@@ -24,7 +24,8 @@ SFTP_CONN_ID = "sftp_claims"
 CLAIMS_FILE = "claims_data_6k.csv"
 COPY_1 = "claims_data_6k_copy1.csv"
 COPY_2 = "claims_data_6k_copy2.csv"
-ARCHIVE_DIR = "/ftp/archive"
+# Relative to the SFTP user's home directory (where CLAIMS_FILE lives).
+ARCHIVE_DIR = "archive"
 ARCHIVED_FILE = f"{ARCHIVE_DIR}/{COPY_1}"
 ARCHIVED_ZIP = f"{ARCHIVE_DIR}/claims_data_6k_copy1.zip"
 DEMO_USER = "claims_ops_user"
@@ -56,7 +57,7 @@ def claims_sftp_archive():
                 sftp.stat(ARCHIVE_DIR)
             except FileNotFoundError:
                 sftp.mkdir(ARCHIVE_DIR)
-            sftp.posix_rename(COPY_1, ARCHIVED_FILE)
+            sftp.rename(COPY_1, ARCHIVED_FILE)
         print(f"Moved {COPY_1} -> {ARCHIVED_FILE}")
 
     @task
