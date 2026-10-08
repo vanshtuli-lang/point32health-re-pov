@@ -59,7 +59,11 @@ def claims_sftp_archive():
                 sftp.stat(ARCHIVE_DIR)
             except FileNotFoundError:
                 sftp.mkdir(ARCHIVE_DIR)
-            sftp.posix_rename(COPY_1, ARCHIVED_FILE)
+            try:
+                sftp.remove(ARCHIVED_FILE)
+            except FileNotFoundError:
+                pass
+            sftp.rename(COPY_1, ARCHIVED_FILE)
         print(f"Moved {COPY_1} -> {ARCHIVED_FILE}")
 
     @task
