@@ -171,6 +171,9 @@ loggingSidecar:
       cpu: "0.5"
       memory: "1Gi"
 
+  # NOTE: the chart runs `config` through Helm `tpl`. Anything with double curly
+  # braces INSIDE the config block (including comments!) is evaluated by Helm.
+  # Vector label templates are therefore escaped with a raw string (see labels).
   config: |
     data_dir: /etc/vector/task_logs
 
@@ -209,8 +212,8 @@ loggingSidecar:
         labels:
           job: astro-remote-execution
           deployment: explosive-electronics-2096
-          dagID: "{{ dagID }}"
-          taskID: "{{ taskID }}"
+          dagID: "{{ `{{ dagID }}` }}"
+          taskID: "{{ `{{ taskID }}` }}"
         encoding:
           codec: text
 
