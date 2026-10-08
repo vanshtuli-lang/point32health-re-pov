@@ -195,7 +195,7 @@ loggingSidecar:
           .taskID = parsed.taskID
           .runID = parsed.runID
           .dagID = parsed.dagID
-          .mapIndex = parsed.mapIndex ?? -1
+          .mapIndex = if is_null(parsed.mapIndex) { "-1" } else { parsed.mapIndex }
 
     sinks:
       grafana_loki:
