@@ -9,8 +9,10 @@ Uses the same SFTP server and file as `claims_sftp_to_oracle_parallel`:
 5. Delete the original file.
 6. Revoke the user's delete access (demo: log only).
 
-Copy 2 stays in the original location as a backup. Re-upload the original
-file before re-running this DAG or the claims load DAGs.
+Copy 2 stays in the original location as a backup. On the next run, step 1
+restores the original from copy 2 if it's missing, so the DAG can be re-run
+without re-uploading. Run this DAG (or re-upload the file) before running
+`claims_sftp_to_oracle_parallel` again, since that DAG needs the original.
 """
 
 import io
@@ -45,6 +47,23 @@ def claims_sftp_archive():
     @task
     def make_copies():
         with SFTPHook(ssh_conn_id=SFTP_CONN_ID).get_conn() as sftp:
+            # A previous run deletes the original (step 5) but leaves copy 2
+            # as a backup. Restore the original from it so the DAG can re-run.
+            try:
+                sftp.stat(CLAIMS_FILE)
+            except FileNotFoundError:
+                try:
+                    with sftp.open(COPY_2, "rb") as f:
+                        backup = f.read()
+                except FileNotFoundError:
+                    raise FileNotFoundError(
+                        f"Neither {CLAIMS_FILE} nor backup {COPY_2} exists on the "
+                        "SFTP server. Re-upload the claims file."
+                    ) from None
+                with sftp.open(CLAIMS_FILE, "wb") as f:
+                    f.write(backup)
+                print(f"Restored {CLAIMS_FILE} from backup {COPY_2}")
+
             with sftp.open(CLAIMS_FILE, "rb") as f:
                 data = f.read()
             for copy in (COPY_1, COPY_2):
