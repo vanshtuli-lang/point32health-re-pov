@@ -17,8 +17,9 @@ Fan-Out Reads (10) → Summarize → File Check
 
 - **R1** — DAG header: schedule `0 22 * * 0-4`, timezone `America/New_York`, next run time.
 - **R5** — Set Variable `wf5_gate_state=HOLD`, trigger: Gate waits (up_for_reschedule). Set `RELEASE`: continues within 30 s.
-- **R2** — Trigger a run with logical date = previous business day 22:00 ET and `skip_prior_day_check=true`.
-  Then trigger today at 22:00 ET: Prior Day Check finds yesterday's successful `file_check` and passes.
+- **R2** — Seed once: trigger with logical date = previous business day 22:00 ET and `skip_prior_day_check=true`.
+  Then trigger with the default logical date (now): Prior Day Check finds that run's successful
+  `file_check` and passes. Never use a future logical date; Airflow won't start it until that time.
 - **R9** — Set Variable `wf5_bypass_enrichment=true`: Enrich is skipped, Bypassed runs, reads continue.
 - **R3** — Open `R3 · Read Claims`: 10 mapped tasks run in parallel, each logs the row count; Summarize logs all 10.
 - **R11** — File Check confirms `claims_data_6k_copy2.csv` is on `sftp_claims`; remove the file to show it waiting.
@@ -66,9 +67,9 @@ def prior_run_logical_date(run_time: datetime) -> datetime:
 @dag(
     dag_id=DAG_ID,
     schedule=CronTriggerTimetable(f"0 {RUN_HOUR} * * 0-4", timezone=BUSINESS_TZ),
-    # With catchup=False, unpausing queues the latest past cron slot unless start_date is after
-    # it. Starting today means the first scheduled run is Thu 2026-10-15 22:00, not on unpause.
-    start_date=pendulum.datetime(2026, 10, 15, tz=BUSINESS_TZ),
+    # Must precede every run's logical date (including back-dated demo runs): Airflow creates a
+    # run with no task instances when its logical date is before start_date.
+    start_date=pendulum.datetime(2026, 10, 1, tz=BUSINESS_TZ),
     catchup=False,
     dagrun_timeout=timedelta(hours=6),
     default_args={"owner": "platform-ops", "retries": 2, "retry_delay": timedelta(seconds=30)},
