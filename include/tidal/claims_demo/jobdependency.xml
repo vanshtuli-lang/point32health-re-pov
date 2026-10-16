@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns:tes="http://www.tidalsoftware.com/client/tesservlet">
+  <entry>
+    <tes:jobdependency>
+      <tes:jobname>CLAIMS_LOAD</tes:jobname>
+      <tes:fullpath>\CLAIMS_DEMO\CLAIMS_LOAD</tes:fullpath>
+      <tes:type>1</tes:type>
+      <tes:depjobtype>2</tes:depjobtype>
+      <tes:depjobname>CLAIMS_VALIDATE</tes:depjobname>
+      <tes:depjobparent>\CLAIMS_DEMO</tes:depjobparent>
+      <tes:depfullpath>\CLAIMS_DEMO\CLAIMS_VALIDATE</tes:depfullpath>
+      <tes:operator>1</tes:operator>
+      <tes:status>101</tes:status>
+      <tes:logic>3</tes:logic>
+      <tes:occurrence>3</tes:occurrence>
+      <tes:ingroup>Y</tes:ingroup>
+      <tes:ignoredep>N</tes:ignoredep>
+      <tes:dateoffset>0</tes:dateoffset>
+    </tes:jobdependency>
+  </entry>
+</feed>
