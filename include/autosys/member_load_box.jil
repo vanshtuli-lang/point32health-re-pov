@@ -1,0 +1,127 @@
+/* ----------------------------------------------------------------------- */
+/* AutoSys JIL: Nightly member load                                         */
+/*                                                                          */
+/* A BOX job that runs a chain of shell scripts on a remote Unix server     */
+/* (agent machine: memberetl01). Flow:                                      */
+/*                                                                          */
+/*   preflight -> init -> [history, xref, risk] (parallel) -> finalize      */
+/*                                                                          */
+/* Scripts live under /opt/member_load/bin on the agent machine.            */
+/* ----------------------------------------------------------------------- */
+
+/* ----------------- MEMBER_LOAD_BOX ----------------- */
+
+insert_job: MEMBER_LOAD_BOX
+job_type: BOX
+owner: etluser@memberetl01
+permission: gx,ge,wx
+date_conditions: 1
+days_of_week: mo,tu,we,th,fr
+start_times: "02:00"
+timezone: US/Eastern
+description: "Nightly member load - runs shell scripts on memberetl01"
+alarm_if_fail: 1
+box_terminator: 0
+
+/* ----------------- MEMBER_LOAD_PREFLIGHT ----------------- */
+
+insert_job: MEMBER_LOAD_PREFLIGHT
+job_type: CMD
+box_name: MEMBER_LOAD_BOX
+command: /opt/member_load/bin/preflight_check.sh
+machine: memberetl01
+owner: etluser@memberetl01
+permission: gx,ge,wx
+description: "Verify host, disk space, and upstream source files"
+std_out_file: /opt/member_load/logs/preflight_check.$AUTO_JOB_NAME.out
+std_err_file: /opt/member_load/logs/preflight_check.$AUTO_JOB_NAME.err
+n_retrys: 2
+term_run_time: 15
+alarm_if_fail: 1
+box_terminator: 1
+
+/* ----------------- MEMBER_LOAD_INIT ----------------- */
+
+insert_job: MEMBER_LOAD_INIT
+job_type: CMD
+box_name: MEMBER_LOAD_BOX
+command: /opt/member_load/bin/init_load.sh --run-date $$(MEMBER_LOAD_RUN_DATE)
+machine: memberetl01
+owner: etluser@memberetl01
+permission: gx,ge,wx
+condition: s(MEMBER_LOAD_PREFLIGHT)
+description: "Create working directory and initialize load status file"
+std_out_file: /opt/member_load/logs/init_load.$AUTO_JOB_NAME.out
+std_err_file: /opt/member_load/logs/init_load.$AUTO_JOB_NAME.err
+n_retrys: 1
+term_run_time: 10
+alarm_if_fail: 1
+box_terminator: 1
+
+/* ----------------- MEMBER_LOAD_HISTORY ----------------- */
+
+insert_job: MEMBER_LOAD_HISTORY
+job_type: CMD
+box_name: MEMBER_LOAD_BOX
+command: /opt/member_load/bin/load_member_history.sh
+machine: memberetl01
+owner: etluser@memberetl01
+permission: gx,ge,wx
+condition: s(MEMBER_LOAD_INIT)
+description: "Load member history records"
+std_out_file: /opt/member_load/logs/load_member_history.$AUTO_JOB_NAME.out
+std_err_file: /opt/member_load/logs/load_member_history.$AUTO_JOB_NAME.err
+n_retrys: 2
+term_run_time: 60
+alarm_if_fail: 1
+
+/* ----------------- MEMBER_LOAD_XREF ----------------- */
+
+insert_job: MEMBER_LOAD_XREF
+job_type: CMD
+box_name: MEMBER_LOAD_BOX
+command: /opt/member_load/bin/load_member_xref.sh
+machine: memberetl01
+owner: etluser@memberetl01
+permission: gx,ge,wx
+condition: s(MEMBER_LOAD_INIT)
+description: "Load member cross-reference records"
+std_out_file: /opt/member_load/logs/load_member_xref.$AUTO_JOB_NAME.out
+std_err_file: /opt/member_load/logs/load_member_xref.$AUTO_JOB_NAME.err
+n_retrys: 2
+term_run_time: 45
+alarm_if_fail: 1
+
+/* ----------------- MEMBER_LOAD_RISK ----------------- */
+
+insert_job: MEMBER_LOAD_RISK
+job_type: CMD
+box_name: MEMBER_LOAD_BOX
+command: /opt/member_load/bin/load_member_risk.sh
+machine: memberetl01
+owner: etluser@memberetl01
+permission: gx,ge,wx
+condition: s(MEMBER_LOAD_INIT)
+description: "Load member risk scores"
+std_out_file: /opt/member_load/logs/load_member_risk.$AUTO_JOB_NAME.out
+std_err_file: /opt/member_load/logs/load_member_risk.$AUTO_JOB_NAME.err
+n_retrys: 2
+term_run_time: 45
+alarm_if_fail: 1
+
+/* ----------------- MEMBER_LOAD_FINALIZE ----------------- */
+
+insert_job: MEMBER_LOAD_FINALIZE
+job_type: CMD
+box_name: MEMBER_LOAD_BOX
+command: /opt/member_load/bin/finalize_load.sh
+machine: memberetl01
+owner: etluser@memberetl01
+permission: gx,ge,wx
+condition: s(MEMBER_LOAD_HISTORY) & s(MEMBER_LOAD_XREF) & s(MEMBER_LOAD_RISK)
+description: "Mark load complete and archive working files"
+std_out_file: /opt/member_load/logs/finalize_load.$AUTO_JOB_NAME.out
+std_err_file: /opt/member_load/logs/finalize_load.$AUTO_JOB_NAME.err
+n_retrys: 1
+term_run_time: 15
+alarm_if_fail: 1
