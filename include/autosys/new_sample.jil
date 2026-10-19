@@ -1,0 +1,103 @@
+insert_job: HP.LNAPPD064.DEV.DXCG_RUNDXCG6ALL_MRM   job_type: CMD 
+command: /app/dxcg/DXCG6ALL/scripts/rundxcg6all devl dxcg6all_DxCG_6.4_medr_ra mrm
+machine: lnappd064
+owner: dxcgusr
+permission: gx,wx
+date_conditions: 0
+condition: s(HP.LNAPPD064.DEV.DXCG_RUNDXCG6ALL_MPM)
+description: "Run DxCG RiskSolutions v6 for configuration dxcg6all_DxCG_6.4_medr_ra"
+std_out_file: "/app/dxcg/DXCG6ALL/log/RUNDXCG6ALL_MRM.log"
+std_err_file: "/app/dxcg/DXCG6ALL/log/RUNDXCG6ALL_MRM.err"
+alarm_if_fail: 1
+profile: "/app/dxcg/DXCG6ALL/scripts/setenv.sh"
+alarm_if_terminated: 1
+
+
+insert_job: HP.LNAPPD064.DEV.DXCG_RUNDXCG6ALL_MPM   job_type: CMD 
+command: /app/dxcg/DXCG6ALL/scripts/rundxcg6all devl dxcg6all_DxCG_6.4_medr_pmam mpm
+machine: lnappd064
+owner: dxcgusr
+permission: gx,wx
+date_conditions: 0
+condition: s(HP.LNAPPD064.DEV.DXCG_RUNDXCG6ALL_RMR)
+description: "Run DxCG RiskSolutions v6 for configuration dxcg6all_DxCG_6.4_medr_pmam"
+std_out_file: "/app/dxcg/DXCG6ALL/log/RUNDXCG6ALL_MPM.log"
+std_err_file: "/app/dxcg/DXCG6ALL/log/RUNDXCG6ALL_MPM.err"
+alarm_if_fail: 1
+profile: "/app/dxcg/DXCG6ALL/scripts/setenv.sh"
+alarm_if_terminated: 1
+
+
+insert_job: HP.LNAPPD064.DEV.DXCG_RUNDXCG6ALL_RMR   job_type: CMD 
+command: /app/dxcg/DXCG6ALL/scripts/rundxcg6all devl dxcg6all_DxCG_6.4_comm_rarx rmr
+machine: lnappd064
+owner: dxcgusr
+permission: gx,wx
+date_conditions: 0
+condition: s(HP.LNAPPD064.DEV.DXCG_RUNDXCG6ALL_RMO)
+description: "Run DxCG RiskSolutions v6 for configuration dxcg6all_DxCG_6.4_comm_rarx"
+std_out_file: "/app/dxcg/DXCG6ALL/log/RUNDXCG6ALL_RMR.log"
+std_err_file: "/app/dxcg/DXCG6ALL/log/RUNDXCG6ALL_RMR.err"
+alarm_if_fail: 1
+profile: "/app/dxcg/DXCG6ALL/scripts/setenv.sh"
+alarm_if_terminated: 1
+
+
+insert_job: HP.LNAPPD064.DEV.DXCG_RUNDXCG6ALL_RMO   job_type: CMD 
+command: /app/dxcg/DXCG6ALL/scripts/rundxcg6all devl dxcg6all_DxCG_6.4_comm_raam rmo
+machine: lnappd064
+owner: dxcgusr
+permission: gx,wx
+date_conditions: 0
+condition: s(HP.LNAPPD064.DEV.DXCG_RUNDXCG6ALL_PMR)
+description: "Run DxCG RiskSolutions v6 for configuration dxcg6all_DxCG_6.4_comm_raam"
+std_out_file: "/app/dxcg/DXCG6ALL/log/RUNDXCG6ALL_RMO.log"
+std_err_file: "/app/dxcg/DXCG6ALL/log/RUNDXCG6ALL_RMO.err"
+alarm_if_fail: 1
+profile: "/app/dxcg/DXCG6ALL/scripts/setenv.sh"
+alarm_if_terminated: 1
+
+
+insert_job: HP.LNAPPD064.DEV.DXCG_RUNDXCG6ALL_PMR   job_type: CMD 
+command: /app/dxcg/DXCG6ALL/scripts/rundxcg6all devl dxcg6all_DxCG_6.4_comm_pmrx pmr
+machine: lnappd064
+owner: dxcgusr
+permission: gx,wx
+date_conditions: 0
+condition: s(HP.LNAPPD064.DEV.DXCG_RUNDXCG6ALL_PMO)
+description: "Run DxCG RiskSolutions v6 for configuration dxcg6all_DxCG_6.4_comm_pmrx"
+std_out_file: "/app/dxcg/DXCG6ALL/log/RUNDXCG6ALL_PMR.log"
+std_err_file: "/app/dxcg/DXCG6ALL/log/RUNDXCG6ALL_PMR.err"
+alarm_if_fail: 1
+profile: "/app/dxcg/DXCG6ALL/scripts/setenv.sh"
+alarm_if_terminated: 1
+
+
+insert_job: HP.LNAPPD064.DEV.DXCG_RUNDXCG6ALL_PMO   job_type: CMD 
+command: /app/dxcg/DXCG6ALL/scripts/rundxcg6all devl dxcg6all_DxCG_6.4_comm_pmam pmo
+machine: lnappd064
+owner: dxcgusr
+permission: gx,wx
+date_conditions: 0
+condition: s(HP.LNAPPD064.DEV.DXCG_GET_EDW_EXTRACTS6ALL)
+description: "Run DxCG RiskSolutions v6 for configuration dxcg6all_DxCG_6.4_comm_pmam"
+std_out_file: "/app/dxcg/DXCG6ALL/log/RUNDXCG6ALL_PMO.log"
+std_err_file: "/app/dxcg/DXCG6ALL/log/RUNDXCG6ALL_PMO.err"
+alarm_if_fail: 1
+profile: "/app/dxcg/DXCG6ALL/scripts/setenv.sh"
+alarm_if_terminated: 1
+
+
+insert_job: HP.LNAPPD064.DEV.DXCG_GET_EDW_EXTRACTS6ALL   job_type: CMD 
+command: /app/dxcg/DXCG6ALL/scripts/getEDWextracts devl
+machine: lnappd064
+owner: dxcgusr
+permission: gx,wx
+date_conditions: 0
+condition: s(HP.AZLXDSD01.DEV.EDWINF_DX_M_DXCG6ALL_MAIN1_END_GK)
+description: "Get edw extracts"
+std_out_file: "/app/dxcg/DXCG6ALL/log/GET_EDW_EXTRACTS6ALL.log"
+std_err_file: "/app/dxcg/DXCG6ALL/log/GET_EDW_EXTRACTS6ALL.err"
+alarm_if_fail: 1
+profile: "/app/dxcg/DXCG6ALL/scripts/setenv.sh"
+alarm_if_terminated: 1
