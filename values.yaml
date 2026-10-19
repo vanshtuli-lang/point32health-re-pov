@@ -223,15 +223,17 @@ workers:
     replicas: 1
     syncSlots: 20
 
+    # 2Gi OOMKilled the worker when wf5's 10 parallel pandas reads ran together.
+    # CPU request stays at 1: the agentpool nodes have <1 CPU unreserved.
     resources:
       limits:
-        cpu: "1"
+        cpu: "2"
         ephemeral-storage: "1Gi"
-        memory: "2Gi"
+        memory: "6Gi"
       requests:
         cpu: "1"
         ephemeral-storage: "1Gi"
-        memory: "2Gi"
+        memory: "4Gi"
 
     env: []
 
