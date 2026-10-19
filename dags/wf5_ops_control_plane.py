@@ -122,6 +122,8 @@ def wf5_ops_control_plane():
         map_index_template="reader {{ task.op_kwargs['reader'] }}",
         # One R9 branch is always skipped; the reads need only the other to succeed.
         trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS,
+        # Each read loads pandas in its own process; 10 at once OOMKilled the 2Gi worker.
+        max_active_tis_per_dagrun=5,
     )
     def read_claims(reader: int) -> int:
         import pandas as pd
